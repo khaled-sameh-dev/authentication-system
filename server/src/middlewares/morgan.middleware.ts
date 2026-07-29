@@ -1,5 +1,4 @@
 import morgan from "morgan";
-
 import logger from "@/config/logger";
 
 export const morganMiddleware = morgan(
@@ -8,18 +7,13 @@ export const morganMiddleware = morgan(
       tokens.method(req, res),
       tokens.url(req, res),
       tokens.status(req, res),
-      `${tokens.responseTime(req, res)} ms`,
-      tokens.contentLength(req, res),
+      `${tokens["response-time"](req, res)} ms`,
+      tokens.res(req, res, "content-length") ?? "-",
     ].join(" ");
   },
   {
     stream: {
-      write: (message: string) => {
-        logger.http(message.trim());
-      },
-    },
-    skip: (req) => {
-      return req.url === "/health" || req.url === "/favicon.ico";
+      write: (message) => logger.http(message.trim()),
     },
   },
 );

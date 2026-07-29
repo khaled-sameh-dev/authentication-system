@@ -20,17 +20,17 @@ class MongoProvider implements DatabaseProvider {
       return;
     }
     try {
-        await mongoose.connect(env.DATABASE_URL! , {
-            maxPoolSize: 10,
-            socketTimeoutMS: 30000,
-            serverSelectionTimeoutMS: 30000,
-        })
-        logger.info("Database Connected Successfully.");
+      await mongoose.connect(env.DATABASE_URL!, {
+        maxPoolSize: 10,
+        socketTimeoutMS: 30000,
+        serverSelectionTimeoutMS: 30000,
+      });
+      logger.info("Database Connected Successfully.");
     } catch (error) {
-        logger.error({
-          message: "Database connection error.",
-          error,
-        });
+      logger.error({
+        message: "Database connection error.",
+        error,
+      });
       throw new DatabaseConnectionError();
     }
   }
@@ -40,28 +40,28 @@ class MongoProvider implements DatabaseProvider {
       return;
     }
     try {
-        await mongoose.disconnect();
-        logger.info("Database Disconnected Successfully.");
+      await mongoose.disconnect();
+      logger.info("Database Disconnected Successfully.");
     } catch (error) {
-        logger.error({
-          message: "Database disconnection error.",
-          error,
-        });
+      logger.error({
+        message: "Database disconnection error.",
+        error,
+      });
       throw new DatabaseConnectionError("Unable to disconnect from MongoDB");
     }
   }
 
   public async healthCheck(): Promise<boolean> {
-    return mongoose.connection.readyState === mongoose.ConnectionStates.connected;
+    return (
+      mongoose.connection.readyState === mongoose.ConnectionStates.connected
+    );
   }
 
   public get status() {
     return this.isConnected;
   }
   public configureDebug(): void {
-    if (env.NODE_ENV == "development") {
-      mongoose.set("debug", true);
-    }
+    mongoose.set("debug", env.NODE_ENV == "development");
   }
 
   private registerEvents() {
@@ -80,7 +80,7 @@ class MongoProvider implements DatabaseProvider {
       });
     });
     mongoose.connection.on("reconnected", () => {
-      this.isConnected = true
+      this.isConnected = true;
       logger.info("Database reconnected Successfully.");
     });
   }

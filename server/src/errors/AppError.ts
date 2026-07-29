@@ -1,14 +1,21 @@
-export class AppError extends Error {
-  public readonly statusCode: number;
-  public readonly isOperational: boolean;
-  public readonly code?: string;
-
-  constructor(message: string, statusCode: number, code?: string) {
+export  class AppError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+    public readonly code: string,
+    public readonly details?: Record<string, unknown>,
+  ) {
     super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-    this.isOperational = true;
-    Object.setPrototypeOf(this, AppError.prototype);
+
     Error.captureStackTrace(this, this.constructor);
+  }
+
+  toJSON() {
+    return {
+      success: false,
+      message: this.message,
+      code: this.code,
+      ...(this.details && { details: this.details }),
+    };
   }
 }
