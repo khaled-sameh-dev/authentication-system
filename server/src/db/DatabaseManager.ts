@@ -1,7 +1,9 @@
-import type { DatabaseProvider } from "./database.interface";
+import { IDatabaseProvider, IHealthCheck } from "./database.interface";
 
- class DatabaseManager {
-  constructor(private readonly provider: DatabaseProvider) {}
+
+
+class DatabaseManager {
+  constructor(private readonly provider: IDatabaseProvider) {}
 
   public connect(): Promise<void> {
     return this.provider.connect();
@@ -11,8 +13,12 @@ import type { DatabaseProvider } from "./database.interface";
     return this.provider.disconnect();
   }
 
-  public healthCheck(): Promise<boolean> {
+  public healthCheck(): Promise<IHealthCheck> {
     return this.provider.healthCheck();
   }
+
+  public isConnected(): boolean {
+    return this.provider.isConnected();
+  }
 }
-export default DatabaseManager
+export default DatabaseManager;

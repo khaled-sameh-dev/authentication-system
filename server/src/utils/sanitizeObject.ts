@@ -18,9 +18,6 @@ export interface ISanitizeOptions {
   omitKeys?: string[];
 }
 
-/**
- * دالة دائرية لتنظيف الكائنات من البيانات الحساسة مع دعم كامل للمرونة
- */
 export const sanitizeObject = (
   obj: unknown,
   options: ISanitizeOptions = {},
@@ -39,12 +36,11 @@ export const sanitizeObject = (
 
   const sensitiveSet = new Set(effectiveKeys.map((k) => k.toLowerCase()));
 
-  // التعامل مع الـ Arrays بأسلوب ريكيرسيف صحيح
   if (Array.isArray(obj)) {
     return obj.map((item) => sanitizeObject(item, options));
   }
 
-  const sanitized: Record<string, unknown> = {};
+  const sanitized: Record<string | symbol, unknown> = {};
 
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     if (sensitiveSet.has(key.toLowerCase())) {
@@ -56,17 +52,21 @@ export const sanitizeObject = (
     }
   }
 
+  // الحفاظ على Winston symbols
+  const symbols = Object.getOwnPropertySymbols(obj);
+  for (const sym of symbols) {
+    sanitized[sym] = (obj as Record<symbol, unknown>)[sym];
+  }
+
   return sanitized;
 };
 
-// Winston Custom Format للـ PII Redaction
 export const createSanitizeFormat = (options?: ISanitizeOptions) => {
   return winston.format((info) => {
-    return sanitizeObject(info, options) as typeof info;
+    return sanitizeObject(info, options) as winston.Logform.TransformableInfo;
   })();
 };
 
-// Winston Custom Format لإرفاق الـ Correlation ID تلقائياً
 export const traceFormat = winston.format((info) => {
   const correlationId = getCorrelationId();
   if (correlationId) {

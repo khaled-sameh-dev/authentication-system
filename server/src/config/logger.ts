@@ -14,13 +14,12 @@ export interface IAuditPayload {
 
 const isProduction = env.NODE_ENV === "production";
 
-// الفورمات الخاص بك مع دمج الـ Sanitizer والـ Tracing
 const loggerFormat = winston.format.combine(
-  winston.format.colorize(),
-  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   traceFormat,
   createSanitizeFormat(),
+  winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   winston.format.errors({ stack: true }),
+  winston.format.colorize(), // وضع Colorize قبل الـ printf مباشرة
   winston.format.printf(({ timestamp, stack, level, message, ...meta }) => {
     let log = `[${timestamp}] ${level}: ${message}`;
 
@@ -48,10 +47,10 @@ const logger = winston.createLogger({
 export const auditLogger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
-    winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     traceFormat,
     createSanitizeFormat(),
-    winston.format.json(), // Audit سجل يفضل حفظه دائماً كـ Structured JSON
+    winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    winston.format.json(),
   ),
   transports: [new winston.transports.File({ filename: "logs/audit.log" })],
 });

@@ -26,9 +26,14 @@ export abstract class AppError extends Error {
   public abstract readonly errorCode: string;
   public readonly details?: Record<string, unknown>;
 
-  constructor(message: string, isOperational: boolean) {
+  constructor(
+    message: string,
+    isOperational: boolean,
+    details?: Record<string, unknown>,
+  ) {
     super(message);
     this.isOperational = isOperational;
+    this.details = details;
     Object.setPrototypeOf(this, new.target.prototype);
 
     this.isOperational = isOperational;
@@ -79,4 +84,14 @@ export class ConflictError extends AppError {
 export class ValidationError extends AppError {
   public readonly statusCode = 422;
   public readonly errorCode = "VALIDATIOM_ERROR";
+}
+
+export class InternalServerError extends AppError {
+  public readonly statusCode = 500;
+  public readonly errorCode = "INTERNAL_SERVER_ERROR";
+}
+
+export class ServiceUnavailableError extends AppError {
+  public readonly statusCode = 503;
+  public readonly errorCode = "SERVICE_UNAVAILABLE";
 }

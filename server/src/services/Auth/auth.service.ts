@@ -45,7 +45,7 @@
 
 // export default AuthService;
 
-import { AppError } from "@/errors";
+import { AppError, ConflictError, NotFoundError } from "@/errors";
 import UserRepository from "@/repositories/User/user.repository";
 import { registerSchema } from "@/schemas/auth/register.schema";
 import { hashPassword } from "@/utils/hashPassword";
@@ -60,8 +60,7 @@ class AuthService {
 
   register = async (data: registerSchema) => {
     const exist = await this.userRepo.findByEmail(data.email);
-    if (exist)
-      throw new AppError("Email already exists", 409, "EMAIL_ALREADY_EXISTS");
+    if (exist) throw new ConflictError("Email already exists", true);
 
     const hashedPassword = await hashPassword(data.password);
 
@@ -70,8 +69,7 @@ class AuthService {
       password: hashedPassword,
     });
 
-    if (!user)
-      throw new AppError("Internal Server Error", 500, "USER_CREATION_FAILED");
+    if (!user) throw new Error();
 
     await this.verificationService.sendVerification({
       userId: user.id,

@@ -1,5 +1,6 @@
 import AuthService from "@/services/Auth/auth.service";
 import VerificationService from "@/services/Verfication/verification.service";
+import { asyncHandler } from "@/utils/asyncHandler";
 import { NextFunction, Response, Request } from "express";
 
 class AuthController {
@@ -8,25 +9,19 @@ class AuthController {
     private verificationService: VerificationService,
   ) {}
 
-  public register = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    try {
+  public register = asyncHandler(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
       const user = await this.authServices.register(req.body);
       res.status(200).json({
         success: true,
         message: "Account Created Succesfully.",
         data: user,
       });
-    } catch (error) {
-      next(error);
-    }
-  };
+    },
+  );
 
-  verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
-    try {
+  verifyEmail = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction) => {
       const { token } = req.body;
 
       await this.verificationService.verifyEmail(token);
@@ -35,10 +30,8 @@ class AuthController {
         success: true,
         message: "Email verified successfully",
       });
-    } catch (error) {
-      next(error);
-    }
-  };
+    },
+  );
 }
 
 export default AuthController;

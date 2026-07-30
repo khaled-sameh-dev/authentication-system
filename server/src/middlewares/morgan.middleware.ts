@@ -5,7 +5,7 @@ const stream: StreamOptions = {
   write: (message) => httpLogStream.write(message),
 };
 
-const morganJsonFormat = (): string => {
+const morganMiddleware = (): string => {
   return JSON.stringify({
     method: ":method",
     url: ":url",
@@ -14,4 +14,4 @@ const morganJsonFormat = (): string => {
   });
 };
 
-export const httpLoggerMiddleware = morgan(morganJsonFormat(), { stream });
+export const httpLoggerMiddleware = morgan(morganMiddleware(), { stream });

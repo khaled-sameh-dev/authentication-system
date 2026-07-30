@@ -1,9 +1,10 @@
-import http from "http";
+import http, { Server } from "http";
 
 import app from "./app";
 import { database } from "@/db";
 import logger from "@/config/logger";
 import env from "@/config/env";
+import { processErrorHandlers, serverShutdownHandler } from "./utils/handleShutdown";
 
 const server = http.createServer(app);
 
@@ -15,7 +16,7 @@ async function bootstrapServer() {
       logger.info(`Server started on port ${env.PORT}`);
     });
 
-    serverShutdownHandler();
+    serverShutdownHandler(server);
   } catch (error) {
     logger.error({
       message: "Application failed to start.",
@@ -26,26 +27,5 @@ async function bootstrapServer() {
   }
 }
 
-function serverShutdownHandler() {
-  const shutdown = async (signal: string) => {
-    logger.warn(`${signal} received. Shutting down...`);
-
-    try {
-      await database.disconnect();
-
-      logger.info("Shutdown Completed.");
-      process.exit(0);
-    } catch (error) {
-      logger.error({
-        message: "Shutdown failed.",
-        error,
-      });
-
-      process.exit(1);
-    }
-  };
-  process.on("SIGINT", () => shutdown("SIGINT"));
-  process.on("SIGTERM", () => shutdown("SIGTERM"));
-}
 
 await bootstrapServer();

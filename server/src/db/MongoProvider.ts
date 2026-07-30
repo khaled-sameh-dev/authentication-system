@@ -1,21 +1,18 @@
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
 import env from "@/config/env";
 import logger from "@/config/logger";
-import { DatabaseConnectionError } from "@/errors";
+import { IDatabaseProvider, IHealthCheck } from "./database.interface";
+import { InternalServerError } from "@/errors";
 
-import { DatabaseProvider } from "./database.interface";
-
-class MongoProvider implements DatabaseProvider {
-  private isConnected: boolean;
+class MongoProvider implements IDatabaseProvider {
   constructor() {
-    this.isConnected = false;
     this.registerEvents();
     this.configureDebug();
   }
 
   public async connect(): Promise<void> {
-    if (this.isConnected) {
+    if (this.isConnected()) {
       logger.warn("Database is already connected.");
       return;
     }
@@ -31,7 +28,7 @@ class MongoProvider implements DatabaseProvider {
         message: "Database connection error.",
         error,
       });
-      throw new DatabaseConnectionError();
+      throw new InternalServerError("Database Connection Faild", false);
     }
   }
   public async disconnect(): Promise<void> {
@@ -47,30 +44,46 @@ class MongoProvider implements DatabaseProvider {
         message: "Database disconnection error.",
         error,
       });
-      throw new DatabaseConnectionError("Unable to disconnect from MongoDB");
+      throw new InternalServerError("Database Disconnection Faild", false);
     }
   }
 
-  public async healthCheck(): Promise<boolean> {
-    return (
-      mongoose.connection.readyState === mongoose.ConnectionStates.connected
-    );
+  public async healthCheck(): Promise<IHealthCheck> {
+    const startTime = Date.now();
+    try {
+      if (this.isConnected() && mongoose.connection.db) {
+        await mongoose.connection.db.admin().ping();
+        return {
+          isUp: true,
+          responseTimeMs: Date.now() - startTime,
+        };
+      }
+      return {
+        isUp: false,
+        error: "Database is not connected",
+      };
+    } catch (err) {
+      return {
+        isUp: false,
+        responseTimeMs: Date.now() - startTime,
+        error:
+          err instanceof Error ? err.message : "Unknown Mongo health error",
+      };
+    }
   }
 
-  public get status() {
-    return this.isConnected;
+  public isConnected(): boolean {
+    return mongoose.connection.readyState === 1;
   }
-  public configureDebug(): void {
+
+  private configureDebug(): void {
     mongoose.set("debug", env.NODE_ENV == "development");
   }
-
   private registerEvents() {
     mongoose.connection.on("connected", () => {
-      this.isConnected = true;
       logger.info("Database Connected Successfully.");
     });
     mongoose.connection.on("disconnected", () => {
-      this.isConnected = false;
       logger.info("Database Disconnected Successfully.");
     });
     mongoose.connection.on("error", (error) => {
@@ -80,7 +93,6 @@ class MongoProvider implements DatabaseProvider {
       });
     });
     mongoose.connection.on("reconnected", () => {
-      this.isConnected = true;
       logger.info("Database reconnected Successfully.");
     });
   }

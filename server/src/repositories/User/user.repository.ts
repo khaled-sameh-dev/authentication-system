@@ -1,4 +1,4 @@
-import { translateMongooseError } from "@/errors/DatabaseValidationError";
+import { ValidationError } from "@/errors";
 import { UserModel } from "@/models/user.model";
 import { registerSchema } from "@/schemas/auth/register.schema";
 
@@ -13,11 +13,7 @@ class UserRepository {
   }
 
   async create(user: Partial<IUser>): Promise<IUser | null> {
-    try {
-      return await UserModel.create(user);
-    } catch (error) {
-      throw translateMongooseError(error);
-    }
+    return await UserModel.create(user);
   }
 
   async verifyEmail(userId: string) {
@@ -29,7 +25,7 @@ class UserRepository {
         isEmailVerified: true,
       },
       {
-        new: true,
+        returnDocument: "after",
       },
     );
   }

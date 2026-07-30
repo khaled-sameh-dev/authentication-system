@@ -15,7 +15,7 @@ class VerificationRepository implements IVerificationRepository {
       data,
       {
         upsert: true,
-        new: true,
+        returnDocument: "after",
       },
     );
   }
