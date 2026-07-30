@@ -1,19 +1,17 @@
-import morgan from "morgan";
-import logger from "@/config/logger";
+import { httpLogStream } from "@/config";
+import morgan, { StreamOptions } from "morgan";
 
-export const morganMiddleware = morgan(
-  (tokens, req, res) => {
-    return [
-      tokens.method(req, res),
-      tokens.url(req, res),
-      tokens.status(req, res),
-      `${tokens["response-time"](req, res)} ms`,
-      tokens.res(req, res, "content-length") ?? "-",
-    ].join(" ");
-  },
-  {
-    stream: {
-      write: (message) => logger.http(message.trim()),
-    },
-  },
-);
+const stream: StreamOptions = {
+  write: (message) => httpLogStream.write(message),
+};
+
+const morganJsonFormat = (): string => {
+  return JSON.stringify({
+    method: ":method",
+    url: ":url",
+    status: ":status",
+    responseTime: ":response-time ms",
+  });
+};
+
+export const httpLoggerMiddleware = morgan(morganJsonFormat(), { stream });
