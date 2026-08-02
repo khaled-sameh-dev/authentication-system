@@ -1,5 +1,5 @@
 import logger from "@/config/logger";
-import { BadRequestError, ValidationError } from "@/errors";
+import { BadRequestError, UnauthorizedError, ValidationError } from "@/errors";
 import AuthService from "@/services/Auth/auth.service";
 import VerificationService from "@/services/Verfication/verification.service";
 import { asyncHandler } from "@/utils/asyncHandler";
@@ -11,8 +11,8 @@ class AuthController {
     private verificationService: VerificationService,
   ) {}
 
-  public register = asyncHandler(
-    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  register = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
       const user = await this.authServices.register(req.body);
 
       res.status(200).json({
@@ -23,8 +23,8 @@ class AuthController {
     },
   );
 
-  public login = asyncHandler(
-    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  login = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
       const userAgent = req.headers["user-agent"] || "Unknown Device";
       const ipAddress =
         (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
@@ -38,7 +38,7 @@ class AuthController {
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        // secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
@@ -56,7 +56,7 @@ class AuthController {
   verifyEmail = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction) => {
       const token = req.query.token;
-      
+
       if (!token?.toString().trim())
         throw new BadRequestError("Token is Required");
 
@@ -69,6 +69,30 @@ class AuthController {
       res.status(200).json({
         success: true,
         message: "Email verified successfully",
+      });
+    },
+  );
+
+  refreshToken = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+      const rawRefreshToken = req.cookies["refreshToken"];
+      if (!rawRefreshToken) throw new UnauthorizedError("Token is required");
+
+      const { accessToken, refreshToken: newRefreshToken } =
+        await this.authServices.refreshToken(rawRefreshToken);
+
+      res.cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      res.status(201).json({
+        success: true,
+        message: "Tokens Refreshed successfuly!",
+        data: {
+          accessToken,
+        },
       });
     },
   );

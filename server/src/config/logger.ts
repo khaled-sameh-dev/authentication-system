@@ -16,7 +16,7 @@ const isProduction = env.NODE_ENV === "production";
 
 const loggerFormat = winston.format.combine(
   traceFormat,
-  // createSanitizeFormat(),
+  createSanitizeFormat(),
   winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
   winston.format.errors({ stack: true }),
   winston.format.colorize(), // وضع Colorize قبل الـ printf مباشرة
@@ -48,7 +48,7 @@ export const auditLogger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
     traceFormat,
-    // createSanitizeFormat(),
+    createSanitizeFormat(),
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     winston.format.json(),
   ),

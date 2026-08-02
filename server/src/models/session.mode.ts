@@ -30,7 +30,6 @@ const sessionSchema = new Schema<ISession>(
     },
     usedAt: {
       type: Date,
-      allowNull: true,
       default: null,
     },
     expiresAt: {

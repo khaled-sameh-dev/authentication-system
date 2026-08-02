@@ -4,9 +4,8 @@ import { ClientSession, Types } from "mongoose";
 import { ISessionREpository } from "./session.interface";
 
 class SessionRepository implements ISessionREpository {
-  public async create(data: Partial<ISession>, dbSession: ClientSession) {
-    const session = new SessionModel(data);
-    return await session.save({ session: dbSession });
+  public async create(data: Partial<ISession>) {
+    return await SessionModel.create(data);
   }
 
   public async findByUserId(userId: Types.ObjectId) {
@@ -16,17 +15,11 @@ class SessionRepository implements ISessionREpository {
     return await SessionModel.findOne({ tokenHash });
   }
 
-  public async deleteCorruptedOrExpiredSessions(
-    userId: Types.ObjectId,
-    dbSession: ClientSession,
-  ) {
-    await SessionModel.deleteMany(
-      {
-        userId,
-        $or: [{ revoked: true, expiresAt: { $lt: new Date() } }],
-      },
-      { session: dbSession },
-    ).exec();
+  public async deleteCorruptedOrExpiredSessions(userId: Types.ObjectId) {
+    await SessionModel.deleteMany({
+      userId,
+      $or: [{ revoked: true }, { expiresAt: { $lt: new Date() } }],
+    }).exec();
   }
 
   public async updateTokenHash(
@@ -41,6 +34,16 @@ class SessionRepository implements ISessionREpository {
       { tokenHash: newTokenHash, expiresAt: newExpiresAt },
       { returnDocument: "after" },
     );
+  }
+
+  async markAsUsed(sessionId: Types.ObjectId) {
+    await SessionModel.findByIdAndUpdate(sessionId, {
+      $set: { usedAt: Date.now() },
+    });
+  }
+
+  async revokeSession(familyId: string) {
+    await SessionModel.updateMany({ familyId }, { $set: { revoked: true } });
   }
 }
 

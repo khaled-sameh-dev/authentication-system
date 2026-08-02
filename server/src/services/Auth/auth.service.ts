@@ -56,9 +56,9 @@ import { registerSchema } from "@/schemas/auth/register.schema";
 import { comparePassword, hashPassword } from "@/utils/hashPassword";
 import VerificationService from "../Verfication/verification.service";
 import { loginSchema } from "@/schemas/auth/login.schema";
-import { generateAccessToken } from "@/utils/jwtToken";
 import { SessionService } from "../Session/session.service";
 import { VerificationType } from "@/types/Verification";
+import { generateAccessToken, hashToken } from "@/utils/cryptoTokens";
 
 export interface LoginServiceInput {
   userAgent: string;
@@ -109,7 +109,7 @@ class AuthService {
     if (!isPasswordValid)
       throw new UnauthorizedError("Email or Password are incorrect");
 
-    const refreshToken = await this.sessionService.createSession({
+    const { refreshToken, familyId } = await this.sessionService.createSession({
       userAgent: options.userAgent,
       ipAddress: options.ipAddress,
       userId: user._id,
@@ -117,7 +117,9 @@ class AuthService {
 
     const accessToken = generateAccessToken({
       userId: user._id,
-      email: user.email,
+      role: user.role,
+      isVerified: user.isEmailVerified,
+      familyId,
     });
 
     return {
@@ -130,6 +132,25 @@ class AuthService {
       accessToken,
       refreshToken,
     };
+  };
+
+  refreshToken = async (token: string) => {
+    const tokenHash = hashToken(token);
+
+    const { refreshToken, userId, familyId } =
+      await this.sessionService.rotateRefreshSession(tokenHash);
+
+    const user = await this.userRepo.findById(userId);
+    if (!user) throw new NotFoundError("User not Found");
+
+    const accessToken = generateAccessToken({
+      userId: user._id,
+      role: user.role,
+      isVerified: user.isEmailVerified,
+      familyId,
+    });
+
+    return { accessToken, refreshToken };
   };
 }
 
