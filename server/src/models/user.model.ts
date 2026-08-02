@@ -1,17 +1,17 @@
+import { UserRole, IUser } from "@/types";
 import { Schema, model } from "mongoose";
 
 const userSchema = new Schema<IUser>(
   {
-    id: {
-      type: String,
-      default: () => crypto.randomUUID(),
-      unique: true,
-      index: true,
-    },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true, select: false },
     isEmailVerified: { type: Boolean, default: false },
+    role: {
+      type: String,
+      enum: Object.values(UserRole),
+      default: UserRole.USER,
+    },
   },
   {
     timestamps: true,
@@ -20,10 +20,9 @@ const userSchema = new Schema<IUser>(
 );
 
 function stripInternalFields(_doc: unknown, ret: Record<string, any>) {
-  delete ret._id;
   delete ret.__v;
   delete ret.password;
   return ret;
 }
 
-export const UserModel = model<IUser>("users", userSchema);
+export const UserModel = model<IUser>("User", userSchema);

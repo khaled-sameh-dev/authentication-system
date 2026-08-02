@@ -1,3 +1,5 @@
+import { IVerification } from "@/types/Verification";
+
 export interface IVerificationRepository {
   create(data: Partial<IVerification>): Promise<any>;
   replace(data: Partial<IVerification>): Promise<any>;

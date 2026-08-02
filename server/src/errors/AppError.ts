@@ -28,15 +28,13 @@ export abstract class AppError extends Error {
 
   constructor(
     message: string,
-    isOperational: boolean,
+    isOperational: boolean = true,
     details?: Record<string, unknown>,
   ) {
     super(message);
     this.isOperational = isOperational;
     this.details = details;
     Object.setPrototypeOf(this, new.target.prototype);
-
-    this.isOperational = isOperational;
 
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor);
@@ -83,7 +81,13 @@ export class ConflictError extends AppError {
 
 export class ValidationError extends AppError {
   public readonly statusCode = 422;
-  public readonly errorCode = "VALIDATIOM_ERROR";
+  public readonly errorCode = "VALIDATION_ERROR";
+  constructor(
+    message: string = "Validation Error",
+    details: Record<string, unknown>,
+  ) {
+    super(message, true, details);
+  }
 }
 
 export class InternalServerError extends AppError {

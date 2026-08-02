@@ -1,6 +1,7 @@
-import { translateZodError } from "@/errors/ValidationError";
 import { NextFunction, Response, Request } from "express";
-import { ZodSchema } from "zod";
+import { ZodError, ZodSchema } from "zod";
+
+import { ValidationError } from "@/errors";
 
 export const validateBody =
   (schema: ZodSchema) =>
@@ -9,6 +10,15 @@ export const validateBody =
       req.body = await schema.parseAsync(req.body);
       next();
     } catch (error) {
-      next(translateZodError(error));
+      if (error instanceof ZodError) {
+        const formatedErrors = error.issues.map((e) => ({
+          field: e.path.join(""),
+          message: e.message,
+        }));
+        throw new ValidationError("Validation Error", {
+          errors: formatedErrors,
+        });
+      }
+      next(error);
     }
   };

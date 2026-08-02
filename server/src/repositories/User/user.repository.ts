@@ -1,26 +1,22 @@
-import { ValidationError } from "@/errors";
 import { UserModel } from "@/models/user.model";
-import { registerSchema } from "@/schemas/auth/register.schema";
+import { IUserRepository, UserDocument } from "./user.interface";
+import { IUser } from "@/types";
+import { HydratedDocument, Types } from "mongoose";
 
-class UserRepository {
-  constructor() {}
-
-  async findByEmail(email: string): Promise<IUser | null> {
-    return await UserModel.findOne({ email: email }).lean();
+class UserRepository implements IUserRepository {
+  async findByEmail(email: string) {
+    return await UserModel.findOne({ email: email }).select("+password");
   }
-  async findById(id: string): Promise<IUser | null> {
-    return await UserModel.findOne({ id }).lean();
+  async findById(id: Types.ObjectId) {
+    return await UserModel.findById(id);
   }
-
-  async create(user: Partial<IUser>): Promise<IUser | null> {
+  async create(user: Partial<IUser>) {
     return await UserModel.create(user);
   }
 
-  async verifyEmail(userId: string) {
-    return UserModel.findOneAndUpdate(
-      {
-        id: userId,
-      },
+  async verifyEmail(userId: Types.ObjectId) {
+    return UserModel.findByIdAndUpdate(
+      userId,
       {
         isEmailVerified: true,
       },

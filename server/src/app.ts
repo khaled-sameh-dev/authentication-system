@@ -21,10 +21,9 @@ app.use(httpLoggerMiddleware);
 
 app.use(appLimiter);
 
-app.use("/v1/api", router);
+app.use("/api/v1", router);
 
 app.use("/healthz", healthRouter);
-
 
 app.get("/api/v1/test", (_req, res) => {
   res.json({ success: true, message: "API is working!" });

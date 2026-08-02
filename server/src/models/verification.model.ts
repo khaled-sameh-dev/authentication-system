@@ -1,23 +1,11 @@
-import mongoose, { Schema } from "mongoose";
-
-export enum VerificationType {
-  EMAIL_VERIFICATION = "EMAIL_VERIFICATION",
-  PASSWORD_RESET = "PASSWORD_RESET",
-  CHANGE_EMAIL = "CHANGE_EMAIL",
-}
-
+import { IVerification, VerificationType } from "@/types/Verification";
+import mongoose, { Schema, Types } from "mongoose";
 
 const verificationTokenSchema = new Schema<IVerification>(
   {
-    id: {
-      type: String,
-      unique: true,
-      default: () => crypto.randomUUID(),
-      index: true,
-    },
     userId: {
-      ref: "users",
-      type: String,
+      ref: "User",
+      type: Types.ObjectId,
       required: true,
       index: true,
     },
@@ -41,6 +29,6 @@ const verificationTokenSchema = new Schema<IVerification>(
 );
 
 export const Verification = mongoose.model<IVerification>(
-  "verification-tokens",
+  "Verification-Token",
   verificationTokenSchema,
 );

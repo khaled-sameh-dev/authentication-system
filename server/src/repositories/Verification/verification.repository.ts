@@ -1,5 +1,6 @@
 import { Verification } from "@/models/verification.model";
 import { IVerificationRepository } from "./verification.interface";
+import { IVerification } from "@/types/Verification";
 
 class VerificationRepository implements IVerificationRepository {
   async create(data: Partial<IVerification>) {
@@ -23,7 +24,9 @@ class VerificationRepository implements IVerificationRepository {
   async findByTokenHash(tokenHash: string) {
     return Verification.findOne({
       tokenHash,
-    });
+    })
+      .lean()
+      .exec();
   }
 
   async delete(id: string) {

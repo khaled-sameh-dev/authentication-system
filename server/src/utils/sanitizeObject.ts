@@ -52,7 +52,6 @@ export const sanitizeObject = (
     }
   }
 
-  // الحفاظ على Winston symbols
   const symbols = Object.getOwnPropertySymbols(obj);
   for (const sym of symbols) {
     sanitized[sym] = (obj as Record<symbol, unknown>)[sym];
