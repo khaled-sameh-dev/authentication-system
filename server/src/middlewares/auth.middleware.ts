@@ -1,4 +1,4 @@
-import { ForbiddenError, UnauthorizedError } from "@/errors";
+import { AppError, ForbiddenError, UnauthorizedError } from "@/errors";
 import { SessionModel } from "@/models/session.mode";
 import { UserRole } from "@/types";
 import { verifyToken } from "@/utils/cryptoTokens";
@@ -11,12 +11,12 @@ export const authenticateJwt = async (
 ) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer "))
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     throw new UnauthorizedError(
-      "Access denied: Access Token is missing or in incorrect format",
-      true,
+      "Access denied: Access Token is missing or improperly formatted.",
       { reason: "ACCESS_TOKEN_MISSING" },
     );
+  }
 
   try {
     const [__, token] = authHeader?.split(" ");
@@ -31,8 +31,7 @@ export const authenticateJwt = async (
 
       if (!activeSession) {
         throw new UnauthorizedError(
-          "This session has been cancelled or you have been logged out, Please log in again.",
-          true,
+          "This session has been revoked or you have been logged out. Please log in again.",
           { reason: "SESSION_REVOKED" },
         );
       }
@@ -42,30 +41,40 @@ export const authenticateJwt = async (
     next();
   } catch (error: any) {
     if (error.name === "TokenExpiredError") {
-      throw new UnauthorizedError("Access Token expired", true, {
-        reason: "TOKEN_EXPIRED",
-      });
+      return next(
+        new UnauthorizedError("Access Token has expired.", {
+          reason: "TOKEN_EXPIRED",
+        }),
+      );
     }
-    throw new UnauthorizedError("Invalid Access Token", true, {
-      reason: "INVALID_TOKEN",
-    });
+
+    if (error instanceof AppError) {
+      return next(error);
+    }
+
+    return next(
+      new UnauthorizedError("Invalid Access Token.", {
+        reason: "INVALID_TOKEN",
+      }),
+    );
   }
 };
 
 export const authorizeRoles = (allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) throw new UnauthorizedError("please Login first!");
-
-    const userRole = allowedRoles.includes(req.user.role)!!;
-
-    if (!userRole)
-      throw new ForbiddenError(
-        "User not authorized to access this route",
-        true,
-        {
-          reason: "UNAUTHORIZED",
-        },
+    if (!req.user)
+      throw new UnauthorizedError(
+        "Authentication required. Please log in first.",
       );
+
+    const hasPermission = allowedRoles.includes(req.user.role);
+
+    if (!hasPermission) {
+      throw new ForbiddenError(
+        "Access denied: You do not have permission to access this resource.",
+        { reason: "INSUFFICIENT_PERMISSIONS" },
+      );
+    }
 
     next();
   };
@@ -76,16 +85,17 @@ export const requireEmailVerified = (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req.user) throw new UnauthorizedError("please Login first!");
-
-  if (!req.user.isVerified)
-    throw new ForbiddenError(
-      "User have to verify email to access this route",
-      true,
-      {
-        reason: "EMAIL_NOT_VERIFIED",
-      },
+  if (!req.user)
+    throw new UnauthorizedError(
+      "Authentication required. Please log in first.",
     );
+
+  if (!req.user.isVerified) {
+    throw new ForbiddenError(
+      "Access denied: Email verification is required to access this resource.",
+      { reason: "EMAIL_NOT_VERIFIED" },
+    );
+  }
 
   next();
 };

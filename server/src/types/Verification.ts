@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export enum VerificationType {
   EMAIL_VERIFICATION = "EMAIL_VERIFICATION",
@@ -6,13 +6,11 @@ export enum VerificationType {
   CHANGE_EMAIL = "CHANGE_EMAIL",
 }
 
-export interface IVerification {
+export interface IVerificationToken extends Document {
   userId: mongoose.Types.ObjectId;
   verificationType: VerificationType;
   tokenHash: string;
   expiresAt: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 export interface SendEmailPayload {

@@ -45,6 +45,13 @@ class SessionRepository implements ISessionREpository {
   async revokeSession(familyId: string) {
     await SessionModel.updateMany({ familyId }, { $set: { revoked: true } });
   }
+
+  async revokeAllUserSessions(userId: Types.ObjectId) {
+    await SessionModel.updateMany(
+      { userId, revoked: false },
+      { $set: { revoked: true } },
+    );
+  }
 }
 
 export default SessionRepository;

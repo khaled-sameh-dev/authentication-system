@@ -1,16 +1,16 @@
-import { AppError, ForbiddenError } from "@/errors";
-import { NextFunction, Response, Request } from "express";
+import { NotFoundError } from "@/errors";
+import { NextFunction, Request, Response } from "express";
 
-const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
-  const error = new ForbiddenError(
-    `Route ${req.originalUrl} not found`,
-    false,
-    {
-      reason: "ROUTE_NOT_FOUND",
-      code: 404,
-    },
-  );
-  next(error);
+const notFoundHandler = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void => {
+  const error = new NotFoundError(`Route ${req.originalUrl} not found`, {
+    reason: "ROUTE_NOT_FOUND",
+  });
+
+  return next(error);
 };
 
 export default notFoundHandler;

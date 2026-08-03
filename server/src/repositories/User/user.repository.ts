@@ -25,6 +25,17 @@ class UserRepository implements IUserRepository {
       },
     );
   }
+
+  async update(
+    userId: Types.ObjectId,
+    updateData: Partial<IUser>,
+  ): Promise<IUser | null> {
+    return await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: { updateData } },
+      { new: true, runValidators: true },
+    ).exec();
+  }
 }
 
 export default UserRepository;

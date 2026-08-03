@@ -1,7 +1,7 @@
-import { IVerification, VerificationType } from "@/types/Verification";
+import { IVerificationToken, VerificationType } from "@/types/Verification";
 import mongoose, { Schema, Types } from "mongoose";
 
-const verificationTokenSchema = new Schema<IVerification>(
+const verificationTokenSchema = new Schema<IVerificationToken>(
   {
     userId: {
       ref: "User",
@@ -28,7 +28,7 @@ const verificationTokenSchema = new Schema<IVerification>(
   },
 );
 
-export const Verification = mongoose.model<IVerification>(
+export const Verification = mongoose.model<IVerificationToken>(
   "Verification-Token",
   verificationTokenSchema,
 );

@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import env from "@/config/env";
 
 import { IEmailService } from "./email.interface";
+import { SendEmailPayload } from "@/types/Verification";
 
 export class NodemailerEmailService implements IEmailService {
   private transporter;

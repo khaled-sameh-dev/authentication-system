@@ -10,11 +10,10 @@ import VerificationService from "@/services/Verfication/verification.service";
 const userRepository = new UserRepository();
 const verificationRepository = new VerificationRepository();
 const sessionRepository = new SessionRepository();
-const emailService = new NodemailerEmailService();
+const mailService = new NodemailerEmailService();
 const verificationService = new VerificationService(
   verificationRepository,
   userRepository,
-  emailService,
 );
 const sessionService = new SessionService(sessionRepository);
 
@@ -22,8 +21,13 @@ const authService = new AuthService(
   userRepository,
   verificationService,
   sessionService,
+  mailService,
 );
 
-const authController = new AuthController(authService, verificationService);
+const authController = new AuthController(
+  authService,
+  sessionService,
+  verificationService,
+);
 
 export { authController };

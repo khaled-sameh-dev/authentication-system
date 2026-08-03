@@ -1,64 +1,21 @@
-// import logger from "@/config/logger";
-// import { AppError } from "@/errors";
-// import UserRepository from "@/repositories/User/user.repository";
-// import { registerSchema } from "@/schemas/auth/register.schema";
-// import { hashPassword } from "@/utils/hashPassword";
-// import VerificationService from "../Verfication/verification.service";
-
-// class AuthService {
-//   constructor(
-//     private userRepo: UserRepository,
-//     private verificationService: VerificationService,
-//   ) {}
-
-//   register = async (data: registerSchema) => {
-//     const exist = await this.userRepo.findByEmail(data.email);
-//     if (exist)
-//       throw new AppError("Email already exists", 409, "EMAIL_ALREADY_EXISTS");
-
-//     const hashedPassword = await hashPassword(data.password);
-
-//     const user = await this.userRepo.create({
-//       ...data,
-//       password: hashedPassword,
-//     });
-
-//     if (!user)
-//       throw new AppError("Enternal Server Error", 500, "User Not Found");
-
-//     await this.verificationService.sendVerification(
-//       user.id,
-//       VerificationType.EMAIL_VERIFICATION,
-//     );
-
-//     return {
-//       user: {
-//         id: user.id,
-//         name: user.name,
-//         email: user.email,
-//         isEmailVerified: user.isEmailVerified,
-//       },
-//       verificationRequired: true,
-//     };
-//   };
-// }
-
-// export default AuthService;
-
+import env from "@/config/env";
 import {
-  AppError,
   ConflictError,
+  InternalServerError,
   NotFoundError,
   UnauthorizedError,
 } from "@/errors";
 import UserRepository from "@/repositories/User/user.repository";
-import { registerSchema } from "@/schemas/auth/register.schema";
-import { comparePassword, hashPassword } from "@/utils/hashPassword";
-import VerificationService from "../Verfication/verification.service";
 import { loginSchema } from "@/schemas/auth/login.schema";
-import { SessionService } from "../Session/session.service";
+import { registerSchema } from "@/schemas/auth/register.schema";
+import { resetPasswordSchema } from "@/schemas/auth/reset-password.schema";
 import { VerificationType } from "@/types/Verification";
 import { generateAccessToken, hashToken } from "@/utils/cryptoTokens";
+import { comparePassword, hashPassword } from "@/utils/hashPassword";
+import { emailVerificationTemplate, passwordResetTemplate } from "../Mail/email.template";
+import { NodemailerEmailService } from "../Mail/nodemailer.email.service";
+import { SessionService } from "../Session/session.service";
+import VerificationService from "../Verfication/verification.service";
 
 export interface LoginServiceInput {
   userAgent: string;
@@ -70,11 +27,14 @@ class AuthService {
     private userRepo: UserRepository,
     private verificationService: VerificationService,
     private sessionService: SessionService,
+    private mailService: NodemailerEmailService,
   ) {}
 
   register = async (data: registerSchema) => {
     const exist = await this.userRepo.findByEmail(data.email);
-    if (exist) throw new ConflictError("Email already exists", true);
+    if (exist) {
+      throw new ConflictError("Email already exists");
+    }
 
     const hashedPassword = await hashPassword(data.password);
 
@@ -83,16 +43,25 @@ class AuthService {
       password: hashedPassword,
     });
 
-    if (!user) throw new Error();
+    if (!user) {
+      throw new InternalServerError("Failed to create user");
+    }
 
-    await this.verificationService.sendVerification({
-      userId: user._id,
-      type: VerificationType.EMAIL_VERIFICATION,
+    const rawToken = await this.verificationService.createVerificationToken(
+      user._id,
+      VerificationType.EMAIL_VERIFICATION,
+    );
+
+    const verificationUrl = `${env.CLIENT_URL}/verify-email?token=${rawToken}`;
+    await this.mailService.send({
+      to: user.email,
+      subject: "Verify your email",
+      html: emailVerificationTemplate(verificationUrl),
     });
 
     return {
       user: {
-        id: user.id,
+        id: user._id,
         name: user.name,
         email: user.email,
         isEmailVerified: user.isEmailVerified,
@@ -103,11 +72,14 @@ class AuthService {
 
   login = async (data: loginSchema, options: LoginServiceInput) => {
     const user = await this.userRepo.findByEmail(data.email);
-    if (!user) throw new UnauthorizedError("Email or Password are incorrect");
+    if (!user) {
+      throw new UnauthorizedError("Invalid email or password");
+    }
 
     const isPasswordValid = await comparePassword(data.password, user.password);
-    if (!isPasswordValid)
-      throw new UnauthorizedError("Email or Password are incorrect");
+    if (!isPasswordValid) {
+      throw new UnauthorizedError("Invalid email or password");
+    }
 
     const { refreshToken, familyId } = await this.sessionService.createSession({
       userAgent: options.userAgent,
@@ -141,7 +113,9 @@ class AuthService {
       await this.sessionService.rotateRefreshSession(tokenHash);
 
     const user = await this.userRepo.findById(userId);
-    if (!user) throw new NotFoundError("User not Found");
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
 
     const accessToken = generateAccessToken({
       userId: user._id,
@@ -151,6 +125,46 @@ class AuthService {
     });
 
     return { accessToken, refreshToken };
+  };
+
+  forgetPassword = async (email: string): Promise<void> => {
+    const user = await this.userRepo.findByEmail(email);
+    if (!user) return;
+
+    const rawToken = await this.verificationService.createVerificationToken(
+      user._id,
+      VerificationType.PASSWORD_RESET,
+    );
+
+    const resetUrl = `${env.CLIENT_URL}/reset-password?token=${rawToken}`;
+    await this.mailService.send({
+      to: user.email,
+      subject: "Reset Password",
+      html: passwordResetTemplate(resetUrl),
+    });
+  };
+
+  resetPassword = async (data: resetPasswordSchema) => {
+    const userId = await this.verificationService.verifyToken(
+      data.token,
+      VerificationType.PASSWORD_RESET,
+    );
+
+    if (!userId) {
+      throw new InternalServerError("Verification failed, please try again later");
+    }
+
+    const hashedPassword = await hashPassword(data.newPassword);
+
+    const result = await this.userRepo.update(userId, {
+      password: hashedPassword,
+    });
+
+    if (result === null) {
+      throw new InternalServerError("Updating password failed, please try again later");
+    }
+
+    await this.sessionService.revokeUserSessions(userId);
   };
 }
 

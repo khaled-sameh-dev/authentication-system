@@ -1,9 +1,9 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 import env from "@/config/env";
 import logger from "@/config/logger";
-import { IDatabaseProvider, IHealthCheck } from "./database.interface";
 import { InternalServerError } from "@/errors";
+import { IDatabaseProvider, IHealthCheck } from "./database.interface";
 
 class MongoProvider implements IDatabaseProvider {
   constructor() {
@@ -23,28 +23,29 @@ class MongoProvider implements IDatabaseProvider {
         serverSelectionTimeoutMS: 30000,
       });
       logger.info("Database Connected Successfully.");
-    } catch (error) {
-      logger.error({
-        message: "Database connection error.",
-        error,
+    } catch (error: any) {
+      logger.error("Database connection error.", { error });
+      
+      throw new InternalServerError("Database connection failed", {
+        originalError: error.message,
       });
-      throw new InternalServerError("Database Connection Faild", false);
     }
   }
+
   public async disconnect(): Promise<void> {
-    if (!this.isConnected) {
+    if (!this.isConnected()) {
       logger.warn("Database is already disconnected.");
       return;
     }
     try {
       await mongoose.disconnect();
       logger.info("Database Disconnected Successfully.");
-    } catch (error) {
-      logger.error({
-        message: "Database disconnection error.",
-        error,
+    } catch (error: any) {
+      logger.error("Database disconnection error.", { error });
+      
+      throw new InternalServerError("Database disconnection failed", {
+        originalError: error.message,
       });
-      throw new InternalServerError("Database Disconnection Faild", false);
     }
   }
 
@@ -62,12 +63,11 @@ class MongoProvider implements IDatabaseProvider {
         isUp: false,
         error: "Database is not connected",
       };
-    } catch (err) {
+    } catch (err: any) {
       return {
         isUp: false,
         responseTimeMs: Date.now() - startTime,
-        error:
-          err instanceof Error ? err.message : "Unknown Mongo health error",
+        error: err instanceof Error ? err.message : "Unknown Mongo health error",
       };
     }
   }
@@ -77,21 +77,22 @@ class MongoProvider implements IDatabaseProvider {
   }
 
   private configureDebug(): void {
-    mongoose.set("debug", env.NODE_ENV == "development");
+    mongoose.set("debug", env.NODE_ENV === "development");
   }
-  private registerEvents() {
+
+  private registerEvents(): void {
     mongoose.connection.on("connected", () => {
       logger.info("Database Connected Successfully.");
     });
+    
     mongoose.connection.on("disconnected", () => {
       logger.info("Database Disconnected Successfully.");
     });
+    
     mongoose.connection.on("error", (error) => {
-      logger.error({
-        message: "Database connection error.",
-        error,
-      });
+      logger.error("Database connection error event.", { error });
     });
+    
     mongoose.connection.on("reconnected", () => {
       logger.info("Database reconnected Successfully.");
     });

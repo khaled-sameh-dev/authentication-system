@@ -1,13 +1,14 @@
 import { Verification } from "@/models/verification.model";
 import { IVerificationRepository } from "./verification.interface";
-import { IVerification } from "@/types/Verification";
+import { IVerificationToken, VerificationType } from "@/types/Verification";
+import { Types } from "mongoose";
 
 class VerificationRepository implements IVerificationRepository {
-  async create(data: Partial<IVerification>) {
-    return Verification.create(data);
+  async createToken(data: Partial<IVerificationToken>) {
+    return await Verification.create(data);
   }
 
-  async replace(data: Partial<IVerification>) {
+  async replace(data: Partial<IVerificationToken>) {
     return Verification.findOneAndUpdate(
       {
         userId: data.userId,
@@ -28,9 +29,19 @@ class VerificationRepository implements IVerificationRepository {
       .lean()
       .exec();
   }
+  public async findByHashAndType(tokenHash: string, type: VerificationType) {
+    return await Verification.findOne({ tokenHash, type }).exec();
+  }
 
-  async delete(id: string) {
+  async deleteById(id: Types.ObjectId) {
     await Verification.findByIdAndDelete(id);
+  }
+
+  public async deleteByUserIdAndType(
+    userId: Types.ObjectId,
+    type: VerificationType,
+  ) {
+    await Verification.deleteMany({ userId, type }).exec();
   }
 }
 

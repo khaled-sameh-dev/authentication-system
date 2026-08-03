@@ -1,10 +1,9 @@
 import logger from "@/config/logger";
-import { AppError, InternalServerError, UnauthorizedError } from "@/errors";
+import { InternalServerError, UnauthorizedError } from "@/errors";
 import SessionRepository from "@/repositories/Session/session.repository";
 import { hashToken } from "@/utils/cryptoTokens";
 import { generateRandomToken } from "@/utils/hashPassword";
-import mongoose, { Types } from "mongoose";
-import { tr } from "zod/locales";
+import { Types } from "mongoose";
 
 export interface CreateSessionInput {
   userId: Types.ObjectId;
@@ -20,6 +19,7 @@ export interface RefreshSessionResult {
 
 export class SessionService {
   private readonly REFRESH_TOKEN_EXPIRY = 7 * 24 * 60 * 60 * 1000;
+
   constructor(private sessionRepository: SessionRepository) {}
 
   private getRefreshTokenExpiry = (): Date =>
@@ -29,14 +29,14 @@ export class SessionService {
     userAgent,
     ipAddress,
     userId,
-  }: CreateSessionInput) => {
-    let result: { refreshToken: string; familyId: string } | null = null;
-
+  }: CreateSessionInput): Promise<{
+    refreshToken: string;
+    familyId: string;
+  }> => {
     await this.sessionRepository.deleteCorruptedOrExpiredSessions(userId);
 
     const refreshToken = generateRandomToken(40);
     const tokenHash = hashToken(refreshToken);
-
     const familyId = generateRandomToken();
 
     const session = await this.sessionRepository.create({
@@ -50,53 +50,56 @@ export class SessionService {
       usedAt: null,
     });
 
-    if (!session)
+    if (!session) {
       throw new InternalServerError(
-        "Internal Server Error , please try again later!",
+        "Failed to create session, please try again later",
       );
+    }
 
-    result = { refreshToken, familyId };
-
-    return result!;
+    return { refreshToken, familyId };
   };
 
-  rotateRefreshSession = async (refreshToken: string) => {
-    let result: RefreshSessionResult | null = null;
 
-    const session = await this.sessionRepository.findByToken(refreshToken);
-    if (!session)
-      throw new UnauthorizedError("Invalid Session , please login!", true, {
+  rotateRefreshSession = async (
+    tokenHash: string,
+  ): Promise<RefreshSessionResult> => {
+    const session = await this.sessionRepository.findByToken(tokenHash);
+
+    if (!session) {
+      throw new UnauthorizedError("Invalid session, please login again", {
         reason: "INVALID_REFRESH_TOKEN",
       });
+    }
 
-    if (session.revoked || session.expiresAt < new Date())
+    if (session.revoked || session.expiresAt < new Date()) {
       throw new UnauthorizedError(
-        "Session is Revoked or expired , please login!",
-        true,
+        "Session is revoked or expired, please login again",
         {
-          reason: "INVALID_REFRESH_TOKEN",
+          reason: "EXPIRED_OR_REVOKED_SESSION",
         },
       );
+    }
 
     if (session.usedAt !== null) {
       await this.sessionRepository.revokeSession(session.familyId);
 
+      logger.warn(
+        `Security Alert: Refresh token reuse attempt detected for familyId: ${session.familyId}`,
+      );
+
       throw new UnauthorizedError(
-        "unsafe renewal attempt was investigated , please login!",
-        true,
-        {
-          reason: "ATTEMPT_INVESTIGATED",
-        },
+        "Suspicious activity detected. All sessions invalidated, please login again",
+        { reason: "REUSE_DETECTION_TRIGGERED" },
       );
     }
 
     await this.sessionRepository.markAsUsed(session._id);
 
-    const newRefreshToken = generateRandomToken();
-    const tokenHash = hashToken(newRefreshToken);
+    const newRefreshToken = generateRandomToken(40);
+    const newTokenHash = hashToken(newRefreshToken);
 
-    await this.sessionRepository.create({
-      tokenHash,
+    const newSession = await this.sessionRepository.create({
+      tokenHash: newTokenHash,
       familyId: session.familyId,
       userId: session.userId,
       userAgent: session.userAgent,
@@ -106,12 +109,24 @@ export class SessionService {
       expiresAt: this.getRefreshTokenExpiry(),
     });
 
-    result = {
+    if (!newSession) {
+      throw new InternalServerError(
+        "Failed to rotate session, please try again later",
+      );
+    }
+
+    return {
       refreshToken: newRefreshToken,
       userId: session.userId,
       familyId: session.familyId,
     };
+  };
 
-    return result!;
+  public revokeFamily = async (familyId: string): Promise<void> => {
+    await this.sessionRepository.revokeSession(familyId);
+  };
+
+  public revokeUserSessions = async (userId: Types.ObjectId): Promise<void> => {
+    await this.sessionRepository.revokeAllUserSessions(userId);
   };
 }

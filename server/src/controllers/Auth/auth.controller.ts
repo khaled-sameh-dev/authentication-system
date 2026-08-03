@@ -1,13 +1,18 @@
-import logger from "@/config/logger";
-import { BadRequestError, UnauthorizedError, ValidationError } from "@/errors";
+import { clearCookieOptions, refreshTokenCookieOptions } from "@/config/cookie";
+import env from "@/config/env";
+import { BadRequestError, UnauthorizedError } from "@/errors";
 import AuthService from "@/services/Auth/auth.service";
+import { SessionService } from "@/services/Session/session.service";
 import VerificationService from "@/services/Verfication/verification.service";
+import { VerificationType } from "@/types/Verification";
+import { ApiResponse } from "@/utils/apiResponse";
 import { asyncHandler } from "@/utils/asyncHandler";
 import { NextFunction, Response, Request } from "express";
 
 class AuthController {
   constructor(
     private authServices: AuthService,
+    private sessionService: SessionService,
     private verificationService: VerificationService,
   ) {}
 
@@ -15,11 +20,7 @@ class AuthController {
     async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
       const user = await this.authServices.register(req.body);
 
-      res.status(200).json({
-        success: true,
-        message: "Account Created Succesfully.",
-        data: user,
-      });
+      ApiResponse.created(res, user, "Account Created Successfully.");
     },
   );
 
@@ -36,64 +37,88 @@ class AuthController {
         { userAgent, ipAddress },
       );
 
-      res.cookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-      res.status(201).json({
-        success: true,
-        message: "Login Succesfully",
-        data: {
-          user,
-          accessToken,
-        },
-      });
+      res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
+
+      ApiResponse.success(res, { user, accessToken }, "Login Successful.");
     },
   );
 
   verifyEmail = asyncHandler(
-    async (req: Request, res: Response, _next: NextFunction) => {
+    async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
       const token = req.query.token;
 
-      if (!token?.toString().trim())
-        throw new BadRequestError("Token is Required");
-
-      if (typeof token !== "string") {
-        throw new BadRequestError("Token must be a valid string");
+      if (!token?.toString().trim()) {
+        throw new BadRequestError("Token is required.");
       }
 
-      await this.verificationService.verifyEmail(token);
+      if (typeof token !== "string") {
+        throw new BadRequestError("Token must be a valid string.");
+      }
 
-      res.status(200).json({
-        success: true,
-        message: "Email verified successfully",
-      });
+      await this.verificationService.verifyToken(
+        token,
+        VerificationType.EMAIL_VERIFICATION,
+      );
+
+      ApiResponse.success(res, null, "Email verified successfully.");
     },
   );
 
   refreshToken = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
       const rawRefreshToken = req.cookies["refreshToken"];
-      if (!rawRefreshToken) throw new UnauthorizedError("Token is required");
+      if (!rawRefreshToken) {
+        throw new UnauthorizedError("Refresh token is required.");
+      }
 
       const { accessToken, refreshToken: newRefreshToken } =
         await this.authServices.refreshToken(rawRefreshToken);
 
-      res.cookie("refreshToken", newRefreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
-      res.status(201).json({
-        success: true,
-        message: "Tokens Refreshed successfuly!",
-        data: {
-          accessToken,
-        },
-      });
+      res.cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions);
+
+      ApiResponse.success(
+        res,
+        { accessToken },
+        "Tokens refreshed successfully.",
+      );
+    },
+  );
+
+  logout = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+      const familyId = req.user?.familyId;
+
+      if (familyId) {
+        await this.sessionService.revokeFamily(familyId);
+      }
+
+      res.clearCookie("refreshToken", clearCookieOptions);
+
+      ApiResponse.success(res, null, "Logout successful.");
+    },
+  );
+
+  forgotPassword = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+      ApiResponse.success(
+        res,
+        null,
+        "A verification code has been sent via email. Please check your inbox.",
+      );
+    },
+  );
+
+  resetPassword = asyncHandler(
+    async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+      const { token, newPassword } = req.body;
+
+      await this.authServices.resetPassword({ token, newPassword });
+
+      ApiResponse.success(
+        res,
+        null,
+        "Password changed successfully. You have been logged out from all devices.",
+      );
     },
   );
 }
