@@ -1,10 +1,13 @@
 import http, { Server } from "http";
 
-import app from "./app";
+import app from "./src/app";
 import { database } from "@/db";
 import logger from "@/config/logger";
 import env from "@/config/env";
-import { processErrorHandlers, serverShutdownHandler } from "./utils/handleShutdown";
+import {
+  processErrorHandlers,
+  serverShutdownHandler,
+} from "./src/utils/handleShutdown";
 
 const server = http.createServer(app);
 
@@ -26,6 +29,5 @@ async function bootstrapServer() {
     process.exit(1);
   }
 }
-
 
 await bootstrapServer();
