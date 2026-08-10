@@ -5,6 +5,10 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    cssCodeSplit: true,
+    sourcemap: true,
+  },
 
   resolve: {
     alias: {
