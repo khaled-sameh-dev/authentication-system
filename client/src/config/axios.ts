@@ -89,9 +89,9 @@ apiClient.interceptors.response.use(
       const { data: response } = await apiClient.post<RefreshTokenResponse>(
         "/auth/refresh-token",
       );
-      const { user, accessToken } = response.data;
+      const { accessToken } = response.data;
 
-      authStore.setSession(user, accessToken);
+      authStore.setSession(accessToken);
       processQueue(null, accessToken);
 
       if (originalRequest.headers) {

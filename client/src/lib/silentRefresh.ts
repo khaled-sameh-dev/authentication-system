@@ -23,7 +23,7 @@ const performSilentRefresh = async () => {
       "/auth/refresh-token",
     );
 
-    authStore.setSession(response.data.user, response.data.accessToken);
+    authStore.setSession( response.data.accessToken);
   } catch {
     authStore.clearSession();
     onSessionExpired?.();

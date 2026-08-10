@@ -8,7 +8,7 @@ const EmailVerificationBanner = () => {
   const [isDismissed, setIsDismissed] = useState(false);
   const { mutate: resend, isPending } = useResendVerification();
 
-  if (!user || user.isEmailVerified || isDismissed) {
+  if (!user || user.isVerified || isDismissed) {
     return null;
   }
 
