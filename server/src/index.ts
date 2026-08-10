@@ -1,13 +1,13 @@
 import http, { Server } from "http";
 
-import app from "./src/app";
+import app from "./app";
 import { database } from "@/db";
 import logger from "@/config/logger";
 import env from "@/config/env";
 import {
   processErrorHandlers,
   serverShutdownHandler,
-} from "./src/utils/handleShutdown";
+} from "./utils/handleShutdown";
 
 const server = http.createServer(app);
 
