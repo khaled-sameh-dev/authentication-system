@@ -4,10 +4,7 @@ import app from "./app";
 import { database } from "@/db";
 import logger from "@/config/logger";
 import env from "@/config/env";
-import {
-  processErrorHandlers,
-  serverShutdownHandler,
-} from "./utils/handleShutdown";
+import { serverShutdownHandler } from "./utils/handleShutdown";
 
 const server = http.createServer(app);
 
@@ -31,3 +28,5 @@ async function bootstrapServer() {
 }
 
 await bootstrapServer();
+
+export default app;
