@@ -7,6 +7,7 @@ import { appLimiter } from "./config/limiter";
 import notFoundHandler from "./middlewares/notFound.middleware";
 import globalErrorHandler from "./middlewares/error.middleware";
 import healthRouter from "./router/health.route";
+import passport from "passport";
 
 const app = express();
 
@@ -20,6 +21,8 @@ securityMiddlewares.forEach((m) => app.use(m));
 app.use(httpLoggerMiddleware);
 
 app.use(appLimiter);
+
+app.use(passport.initialize());
 
 app.use("/api/v1", router);
 

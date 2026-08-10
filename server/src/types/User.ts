@@ -1,14 +1,19 @@
+import { Types } from "mongoose";
+import { IOAuthAccount } from "./OAuth";
+
 export enum UserRole {
-  ADMIN = "Admin",
-  USER = "User",
+  ADMIN = "admin",
+  USER = "user",
 }
 
 export interface IUser {
+  _id: Types.ObjectId;
   name: string;
   email: string;
   password: string;
   isEmailVerified: boolean;
   role: UserRole;
+  oauthAccounts: IOAuthAccount[];
   createdAt?: Date;
   updatedAt?: Date;
 }

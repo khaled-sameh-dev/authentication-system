@@ -29,6 +29,6 @@ const verificationTokenSchema = new Schema<IVerificationToken>(
 );
 
 export const Verification = mongoose.model<IVerificationToken>(
-  "Verification-Token",
+  "verification-tokens",
   verificationTokenSchema,
 );

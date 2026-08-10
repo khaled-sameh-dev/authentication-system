@@ -5,8 +5,7 @@ export const registerSchema = z
     name: z
       .string("Name is Required")
       .min(1)
-      .trim()
-      .regex(/^[a-zA-Z0-9_]+$/, { message: "Ivalid Name Experession" }),
+      .trim(),
     email: z
       .string("Email is Required")
       .trim()

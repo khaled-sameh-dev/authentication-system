@@ -43,8 +43,11 @@ class VerificationService {
     token: string,
     type: VerificationType,
   ): Promise<Types.ObjectId> => {
+    console.log("token", token);
     const hashedToken = hashToken(token);
+    console.log("token", hashedToken);
     const verified = await this.repository.findByHashAndType(hashedToken, type);
+    console.log("verified", verified);
 
     if (!verified) {
       throw new BadRequestError("Invalid verification token", {

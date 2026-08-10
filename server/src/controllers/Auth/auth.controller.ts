@@ -18,9 +18,23 @@ class AuthController {
 
   register = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-      const user = await this.authServices.register(req.body);
+      const userAgent = req.headers["user-agent"] || "Unknown Device";
+      const ipAddress =
+        (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+        req.socket.remoteAddress ||
+        "0.0.0.0";
+      const { accessToken, refreshToken } = await this.authServices.register(
+        req.body,
+        { userAgent, ipAddress },
+      );
 
-      ApiResponse.created(res, user, "Account Created Successfully.");
+      res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
+
+      ApiResponse.created(
+        res,
+        { accessToken },
+        "Account Created Successfully.",
+      );
     },
   );
 
@@ -32,20 +46,21 @@ class AuthController {
         req.socket.remoteAddress ||
         "0.0.0.0";
 
-      const { user, accessToken, refreshToken } = await this.authServices.login(
+      const { accessToken, refreshToken } = await this.authServices.login(
         req.body,
         { userAgent, ipAddress },
       );
 
       res.cookie("refreshToken", refreshToken, refreshTokenCookieOptions);
 
-      ApiResponse.success(res, { user, accessToken }, "Login Successful.");
+      ApiResponse.success(res, { accessToken }, "Login Successful.");
     },
   );
 
   verifyEmail = asyncHandler(
     async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-      const token = req.query.token;
+     
+      const {token} = req.body;
 
       if (!token?.toString().trim()) {
         throw new BadRequestError("Token is required.");

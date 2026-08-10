@@ -1,5 +1,6 @@
 import { refreshTokenCookieOptions } from "@/config/cookie";
-import { authController } from "@/containers/auth.container";
+import { authController } from "@/container";
+// import { authController } from "@/containers/auth.container";
 import { authenticateJwt } from "@/middlewares/auth.middleware";
 import { validateBody, validateQuery } from "@/middlewares/validate.middleware";
 import { forgotPasswordSchema } from "@/schemas/auth/forget-password.schema";
@@ -16,14 +17,11 @@ router.post("/login", validateBody(loginSchema), authController.login);
 
 router.post(
   "/verify-email",
-  validateQuery(verifyEmailQuerySchema),
+  validateBody(verifyEmailQuerySchema),
   authController.verifyEmail,
 );
 
-router.post(
-  "/refresh-token",
-  authController.refreshToken,
-);
+router.post("/refresh-token", authController.refreshToken);
 
 router.post("/logout", authenticateJwt, authController.logout);
 

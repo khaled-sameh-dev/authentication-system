@@ -1,15 +1,26 @@
-import { UserRole } from "@/types";
+import { IUser, UserRole } from "@/types";
 
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
 import env from "@/config/env";
 import { JwtPayload } from "@/types/express";
+import { Types } from "mongoose";
+
+export interface AccessTokenPayload {
+  userId: Types.ObjectId;
+  role: UserRole;
+  isVerified: boolean;
+  name: string;
+  email: string;
+  familyId: string;
+}
+
 
 const options: SignOptions = {
   expiresIn: (env.JWT_EXPIRES_IN ?? "15m") as SignOptions["expiresIn"],
 };
 
-export const generateAccessToken = (payload: JwtPayload): string => {
+export const generateAccessToken = (payload: AccessTokenPayload): string => {
   return jwt.sign(payload, env.JWT_SECRET as Secret, options);
 };
 export const generateToken = () => crypto.randomBytes(40).toString("hex");

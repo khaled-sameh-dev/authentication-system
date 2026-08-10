@@ -30,7 +30,10 @@ class VerificationRepository implements IVerificationRepository {
       .exec();
   }
   public async findByHashAndType(tokenHash: string, type: VerificationType) {
-    return await Verification.findOne({ tokenHash, type }).exec();
+    return await Verification.findOne({
+      tokenHash,
+      verificationType: type,
+    }).exec();
   }
 
   async deleteById(id: Types.ObjectId) {
@@ -41,7 +44,7 @@ class VerificationRepository implements IVerificationRepository {
     userId: Types.ObjectId,
     type: VerificationType,
   ) {
-    await Verification.deleteMany({ userId, type }).exec();
+    await Verification.deleteMany({ userId, verificationType: type }).exec();
   }
 }
 

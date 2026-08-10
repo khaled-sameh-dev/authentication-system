@@ -1,4 +1,3 @@
-// src/templates/email/baseTemplate.ts
 
 export interface EmailTemplateOptions {
   title: string;

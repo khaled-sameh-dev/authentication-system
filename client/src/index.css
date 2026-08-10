@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap");
+
+@theme {
+  --font-sans: "Cairo", system-ui, sans-serif;
+
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
+  --color-primary-light: #f0fdf4;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #f8fafc;
+  --color-accent-foreground: #0f172a;
+
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #16a34a;
+
+  --color-vendor-primary: #f97316;
+  --color-vendor-hover: #ea580c;
+  --color-vendor-light: #fff7ed;
+
+  --color-admin-primary: #7c3aed;
+  --color-admin-hover: #6d28d9;
+  --color-admin-light: #f5f3ff;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #ffffff;
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* 🛠️ Fixed Component Classes for Tailwind v4 */
+@layer components {
+  /* Base button styles applied directly to avoid circular @apply calls */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] cursor-pointer bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary-hover)] h-10 px-4 py-2 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] cursor-pointer bg-[var(--color-secondary)] text-[var(--color-secondary-foreground)] hover:bg-slate-200 h-10 px-4 py-2;
+  }
+
+  .btn-destructive {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] cursor-pointer bg-[var(--color-destructive)] text-[var(--color-destructive-foreground)] hover:bg-red-600 h-10 px-4 py-2;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] cursor-pointer border border-[var(--color-input)] bg-transparent hover:bg-slate-50 text-slate-700 h-10 px-4 py-2;
+  }
+
+  .btn-vendor {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] cursor-pointer bg-[var(--color-vendor-primary)] text-white hover:bg-[var(--color-vendor-hover)] h-10 px-4 py-2 shadow-sm;
+  }
+
+  .btn-admin {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98] cursor-pointer bg-[var(--color-admin-primary)] text-white hover:bg-[var(--color-admin-hover)] h-10 px-4 py-2 shadow-sm;
+  }
+
+  .input {
+    @apply flex h-10 w-full rounded-md border border-[var(--color-input)] bg-white px-3 py-2 text-sm placeholder:text-[var(--color-muted-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 transition-all;
+  }
+
+  .card-base {
+    @apply rounded-xl border border-[var(--color-border)] bg-white text-slate-900 shadow-sm transition-shadow hover:shadow-md;
+  }
+}

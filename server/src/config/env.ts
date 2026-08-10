@@ -1,3 +1,4 @@
+// src/config/env.ts
 import dotenv from "dotenv";
 import path from "path";
 import { z } from "zod";
@@ -27,6 +28,20 @@ const envSchema = z.object({
     .string()
     .min(10, "JWT_SECRET should be at least 10 characters long"),
   JWT_EXPIRES_IN: z.string().default("15m"),
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().min(1, "GOOGLE_CLIENT_ID is required"),
+  GOOGLE_CLIENT_SECRET: z.string().min(1, "GOOGLE_CLIENT_SECRET is required"),
+  GOOGLE_CALLBACK_URL: z
+    .string()
+    .url("GOOGLE_CALLBACK_URL must be a valid URL"),
+
+  // GitHub OAuth
+  GITHUB_CLIENT_ID: z.string().min(1, "GITHUB_CLIENT_ID is required"),
+  GITHUB_CLIENT_SECRET: z.string().min(1, "GITHUB_CLIENT_SECRET is required"),
+  GITHUB_CALLBACK_URL: z
+    .string()
+    .url("GITHUB_CALLBACK_URL must be a valid URL"),
 });
 
 const _env = envSchema.safeParse(process.env);

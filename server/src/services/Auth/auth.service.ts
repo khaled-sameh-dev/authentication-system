@@ -12,7 +12,10 @@ import { resetPasswordSchema } from "@/schemas/auth/reset-password.schema";
 import { VerificationType } from "@/types/Verification";
 import { generateAccessToken, hashToken } from "@/utils/cryptoTokens";
 import { comparePassword, hashPassword } from "@/utils/hashPassword";
-import { emailVerificationTemplate, passwordResetTemplate } from "../Mail/email.template";
+import {
+  emailVerificationTemplate,
+  passwordResetTemplate,
+} from "../Mail/email.template";
 import { NodemailerEmailService } from "../Mail/nodemailer.email.service";
 import { SessionService } from "../Session/session.service";
 import VerificationService from "../Verfication/verification.service";
@@ -30,7 +33,7 @@ class AuthService {
     private mailService: NodemailerEmailService,
   ) {}
 
-  register = async (data: registerSchema) => {
+  register = async (data: registerSchema, options: LoginServiceInput) => {
     const exist = await this.userRepo.findByEmail(data.email);
     if (exist) {
       throw new ConflictError("Email already exists");
@@ -52,21 +55,32 @@ class AuthService {
       VerificationType.EMAIL_VERIFICATION,
     );
 
-    const verificationUrl = `${env.CLIENT_URL}/verify-email?token=${rawToken}`;
+    const verificationUrl = `${env.CLIENT_URL}/verify-email/confirm?token=${rawToken}`;
     await this.mailService.send({
       to: user.email,
       subject: "Verify your email",
       html: emailVerificationTemplate(verificationUrl),
     });
 
+    const { refreshToken, familyId } = await this.sessionService.createSession({
+      userAgent: options.userAgent,
+      ipAddress: options.ipAddress,
+      userId: user._id,
+    });
+
+    const accessToken = generateAccessToken({
+      userId: user._id,
+      role: user.role,
+      isVerified: user.isEmailVerified,
+      email: user.email,
+      name: user.name,
+      familyId,
+    });
+
     return {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        isEmailVerified: user.isEmailVerified,
-      },
       verificationRequired: true,
+      accessToken,
+      refreshToken,
     };
   };
 
@@ -91,16 +105,12 @@ class AuthService {
       userId: user._id,
       role: user.role,
       isVerified: user.isEmailVerified,
+      email: user.email,
+      name: user.name,
       familyId,
     });
 
     return {
-      user: {
-        id: user._id,
-        role: user.role,
-        email: user.email,
-        isVerified: user.isEmailVerified,
-      },
       accessToken,
       refreshToken,
     };
@@ -121,6 +131,8 @@ class AuthService {
       userId: user._id,
       role: user.role,
       isVerified: user.isEmailVerified,
+      email: user.email,
+      name: user.name,
       familyId,
     });
 
@@ -151,7 +163,9 @@ class AuthService {
     );
 
     if (!userId) {
-      throw new InternalServerError("Verification failed, please try again later");
+      throw new InternalServerError(
+        "Verification failed, please try again later",
+      );
     }
 
     const hashedPassword = await hashPassword(data.newPassword);
@@ -161,7 +175,9 @@ class AuthService {
     });
 
     if (result === null) {
-      throw new InternalServerError("Updating password failed, please try again later");
+      throw new InternalServerError(
+        "Updating password failed, please try again later",
+      );
     }
 
     await this.sessionService.revokeUserSessions(userId);
