@@ -1,5 +1,4 @@
 import { clearCookieOptions, refreshTokenCookieOptions } from "@/config/cookie";
-import env from "@/config/env";
 import { BadRequestError, UnauthorizedError } from "@/errors";
 import AuthService from "@/services/Auth/auth.service";
 import { SessionService } from "@/services/Session/session.service";

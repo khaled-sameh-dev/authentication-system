@@ -1,8 +1,6 @@
-import { refreshTokenCookieOptions } from "@/config/cookie";
 import { authController } from "@/container";
-// import { authController } from "@/containers/auth.container";
 import { authenticateJwt } from "@/middlewares/auth.middleware";
-import { validateBody, validateQuery } from "@/middlewares/validate.middleware";
+import { validateBody } from "@/middlewares/validate.middleware";
 import { forgotPasswordSchema } from "@/schemas/auth/forget-password.schema";
 import { loginSchema } from "@/schemas/auth/login.schema";
 import { registerSchema } from "@/schemas/auth/register.schema";

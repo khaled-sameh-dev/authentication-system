@@ -1,5 +1,4 @@
-import http, { Server } from "http";
-
+import http from "http";
 import app from "./app";
 import { database } from "@/db";
 import logger from "@/config/logger";
@@ -27,6 +26,6 @@ async function bootstrapServer() {
   }
 }
 
-await bootstrapServer();
+bootstrapServer();
 
 export default app;

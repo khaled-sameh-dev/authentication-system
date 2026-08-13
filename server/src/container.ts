@@ -1,4 +1,3 @@
-// src/container.ts
 import AuthController from "@/controllers/Auth/auth.controller";
 import OAuthController from "@/controllers/Auth/oauth.controller";
 
