@@ -1,13 +1,14 @@
 import nodemailer from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 import env from "@/config/env";
 import { IEmailService } from "./email.interface";
 import { SendEmailPayload } from "@/types/Verification";
 
 export class NodemailerEmailService implements IEmailService {
-  private transporter;
+  private transporter: nodemailer.Transporter;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
+    const smtpOptions: SMTPTransport.Options = {
       host: "smtp.gmail.com",
       port: 465,
       secure: true,
@@ -15,12 +16,13 @@ export class NodemailerEmailService implements IEmailService {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS?.trim(),
       },
-      family: 4,
       tls: {
         rejectUnauthorized: false,
       },
       connectionTimeout: 10000,
-    });
+    };
+
+    this.transporter = nodemailer.createTransport(smtpOptions);
   }
 
   async send(data: SendEmailPayload): Promise<void> {
