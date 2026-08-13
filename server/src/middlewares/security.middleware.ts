@@ -4,13 +4,11 @@ import { NextFunction, Response, Request } from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import env from "@/config/env";
 
-// تنظيف الـ CLIENT_URL لضمان عدم وجود Slash في النهاية
 const allowedOrigin = env.CLIENT_URL ? env.CLIENT_URL.replace(/\/$/, "") : "";
 
 const securityMiddlewares = [
   cors({
     origin: (origin, callback) => {
-      // السماح بطلبات Postman أو السيرفرات الخارجيّة (origin بيكون undefined)
       if (!origin) return callback(null, true);
 
       const cleanOrigin = origin.replace(/\/$/, "");
@@ -26,12 +24,12 @@ const securityMiddlewares = [
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    optionsSuccessStatus: 200, // لضمان نجاح طلبات الـ Preflight على كل المتصفحات
+    optionsSuccessStatus: 200,
   }),
 
   helmet({
     contentSecurityPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" }, // السماح للملفات والموارد بالانتقال بين Vercel و Railway
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 
   function (req: Request, res: Response, next: NextFunction) {
