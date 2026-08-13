@@ -16,7 +16,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   setAuth: (accessToken: string) => void;
-   setVerified: () => void;
+  setVerified: () => void;
   logout: () => Promise<void>;
 }
 
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const teardown = initSilentRefresh({
       onExpired: () => {
         if (window.location.pathname !== "/login") {
-          window.location.href = "/login?expired=true";
+          window.location.href = "/login";
         }
       },
     });
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isAuthenticated: snapshot.status === "authenticated",
     isLoading,
     setAuth: authStore.setSession,
-     setVerified: authStore.setVerified,
+    setVerified: authStore.setVerified,
     logout,
   };
 
