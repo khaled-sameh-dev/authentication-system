@@ -2,20 +2,36 @@ import helmet from "helmet";
 import cors from "cors";
 import { NextFunction, Response, Request } from "express";
 import mongoSanitize from "express-mongo-sanitize";
-
 import env from "@/config/env";
 
+// تنظيف الـ CLIENT_URL لضمان عدم وجود Slash في النهاية
+const allowedOrigin = env.CLIENT_URL ? env.CLIENT_URL.replace(/\/$/, "") : "";
+
 const securityMiddlewares = [
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
+  cors({
+    origin: (origin, callback) => {
+      // السماح بطلبات Postman أو السيرفرات الخارجيّة (origin بيكون undefined)
+      if (!origin) return callback(null, true);
+
+      const cleanOrigin = origin.replace(/\/$/, "");
+      if (
+        cleanOrigin === allowedOrigin ||
+        cleanOrigin === "http://localhost:5173"
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS Error: Origin ${origin} is not allowed.`));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    optionsSuccessStatus: 200, // لضمان نجاح طلبات الـ Preflight على كل المتصفحات
   }),
 
-  cors({
-    origin: env.CLIENT_URL,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // السماح للملفات والموارد بالانتقال بين Vercel و Railway
   }),
 
   function (req: Request, res: Response, next: NextFunction) {
@@ -25,10 +41,9 @@ const securityMiddlewares = [
   },
 
   function (req: Request, res: Response, next: NextFunction) {
-    mongoSanitize.sanitize(req.body);
-    mongoSanitize.sanitize(req.query);
-    mongoSanitize.sanitize(req.params);
-
+    if (req.body) mongoSanitize.sanitize(req.body);
+    if (req.query) mongoSanitize.sanitize(req.query);
+    if (req.params) mongoSanitize.sanitize(req.params);
     next();
   },
 ];
