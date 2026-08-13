@@ -56,7 +56,7 @@ class AuthService {
     );
 
     const verificationUrl = `${env.CLIENT_URL}/verify-email/confirm?token=${rawToken}`;
-    await this.mailService.send({
+    this.mailService.send({
       to: user.email,
       subject: "Verify your email",
       html: emailVerificationTemplate(verificationUrl),
