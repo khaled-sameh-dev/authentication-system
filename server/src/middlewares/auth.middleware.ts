@@ -1,5 +1,5 @@
 import { AppError, ForbiddenError, UnauthorizedError } from "@/errors";
-import { SessionModel } from "@/models/session.mode";
+import { SessionModel } from "@/models/session.model";
 import { UserRole } from "@/types";
 import { verifyToken } from "@/utils/cryptoTokens";
 import type { NextFunction, Response, Request } from "express";

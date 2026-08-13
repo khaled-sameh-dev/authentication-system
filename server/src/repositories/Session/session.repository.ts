@@ -1,4 +1,4 @@
-import { SessionModel } from "@/models/session.mode";
+import { SessionModel } from "@/models/session.model";
 import { ISession } from "@/types/Session";
 import { ClientSession, Types } from "mongoose";
 import { ISessionREpository } from "./session.interface";
